@@ -134,7 +134,7 @@ class TrainTransformersNER:
         if self.args.is_trained:
             self.model = transformers.AutoModelForTokenClassification.from_pretrained(self.args.transformers_model)
             self.transforms = Transforms(self.args.transformers_model, cache_dir=self.cache_dir)
-            self.label_to_id = self.model.config.label2id
+            self.label_to_id = self.config.label2id
             self.dataset_split, self.label_to_id, self.language, self.unseen_entity_set = get_dataset_ner(
                 dataset, label_to_id=self.label_to_id, fix_label_dict=True, lower_case=lower_case)
             self.id_to_label = {v: str(k) for k, v in self.label_to_id.items()}
@@ -316,7 +316,7 @@ class TrainTransformersNER:
                         metric = self.__epoch_valid(data_loader['valid'], writer=writer, prefix='valid')
                         if metric['f1'] > best_f1_score:
                             best_f1_score = metric['f1']
-                            self.model.save_pretrained(self.args.checkpoint_dir)
+                            self.model.module.save_pretrained(self.args.checkpoint_dir)
                             self.transforms.tokenizer.save_pretrained(self.args.checkpoint_dir)
                     except RuntimeError:
                         logging.exception('*** RuntimeError: skip validation ***')
@@ -333,10 +333,10 @@ class TrainTransformersNER:
 
         logging.info('[training completed, {} sec in total]'.format(time() - start_time))
         if best_f1_score < 0:
-            self.model.save_pretrained(self.args.checkpoint_dir)
+            self.module.save_pretrained(self.args.checkpoint_dir)
             self.transforms.tokenizer.save_pretrained(self.args.checkpoint_dir)
 
-        self.model.from_pretrained(self.args.checkpoint_dir)
+        self.model.module.from_pretrained(self.args.checkpoint_dir)
         if data_loader['test']:
             self.__epoch_valid(data_loader['test'], writer=writer, prefix='test')
 
